@@ -134,6 +134,4 @@ async def show_allowlist(context: commands.Context):
       steamids.append(f"{allowed} Unknown User")
   await context.send(f"```c\n{'\n'.join(steamids)}```")
 
-
-
 bot.run(config['discord']['token'])

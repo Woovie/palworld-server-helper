@@ -6,4 +6,14 @@
 - Kick and ban
 - Player list
 
+## Commands
+
+- allow
+- allowlist
+- ban
+- disallow
+- help
+- kick
+- players
+
 TODO
