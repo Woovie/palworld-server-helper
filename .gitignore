@@ -1,0 +1,7 @@
+allowlist.json
+cache.json
+config.ini
+.python-version
+
+# Other thing I'm working on, ignore this
+server-config.ini
