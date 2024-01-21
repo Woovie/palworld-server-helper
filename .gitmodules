@@ -1,3 +1,0 @@
-[submodule "rcon-cli"]
-	path = rcon-cli
-	url = https://github.com/gorcon/rcon-cli
