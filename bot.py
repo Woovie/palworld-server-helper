@@ -17,9 +17,9 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-hostname = f"{config["palworld"]["hostname"]}:{config["palworld"]["port"]}"
-password = config["palworld"]["password"]
-rcon_command = [config["palworld"]["rcon_path"], "-a", f"{hostname}", "-p", f"{password}"]
+hostname = ""
+password = ""
+rcon_command = []
 
 @bot.event
 async def on_ready():
@@ -220,5 +220,9 @@ if __name__ == "__main__":
 
   with open("allowlist.json", "r") as raw_read:
     allowlist = json.load(raw_read)
+
+  hostname = f"{config["palworld"]["hostname"]}:{config["palworld"]["port"]}"
+  password = config["palworld"]["password"]
+  rcon_command = [config["palworld"]["rcon_path"], "-a", f"{hostname}", "-p", f"{password}"]
 
   bot.run(config['discord']['token'])
