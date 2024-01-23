@@ -65,7 +65,7 @@ async def send_discord_message(message):
   channel = guild.get_channel(int(config['discord']['channel']))
   announce_to = channel
 
-  if config['discord']['thread']:
+  if 'thread' in config['discord']:
     thread = channel.get_thread(int(config['discord']['thread']))
     announce_to = thread
   
