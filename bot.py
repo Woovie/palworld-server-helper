@@ -8,6 +8,9 @@ import json
 import requests
 from pathlib import Path
 import datetime
+import zipfile
+import os
+import shutil
 
 cache = {}
 allowlist = []
@@ -179,8 +182,10 @@ if __name__ == "__main__":
 
   config.read("config.ini")
 
-  if not Path('rcon').is_dir():
-    print("rcon folder not found, downloading gorcon/rcon-cli from GitHub. Assuming Win64.")
+  rcon_path = Path('rcon')
+  if not rcon_path.is_dir():
+    rcon_path.mkdir()
+    print("rcon folder not found, downloading gorcon/rcon-cli from GitHub. Assuming Win64 and downloading latest release.")
     github_api_results = requests.get("https://api.github.com/repos/gorcon/rcon-cli/releases/latest")
     github_api_json = github_api_results.json()
     github_api_assets = github_api_json["assets"]
@@ -190,13 +195,17 @@ if __name__ == "__main__":
         rcon_download = requests.get(rcon_download_url)
         with open(asset["name"], "wb") as rcon_file:
           rcon_file.write(rcon_download.content)
-        unzip_result = subprocess.run(["unzip", "-j", asset["name"], "-d", "rcon"])
-        if unzip_result.returncode == 0:
-          print("rcon-cli downloaded and extracted successfully.")
-          subprocess.run(["rm", asset["name"]])
+        with zipfile.ZipFile(asset["name"]) as zip_file:
+          for member in zip_file.namelist():
+            filename = os.path.basename(member)
+            if not filename:
+              continue
+
+            source = zip_file.open(member)
+            target = open(os.path.join("rcon", filename), "wb")
+            with source, target:
+              shutil.copyfileobj(source, target)
           break
-        print("rcon-cli downloaded but failed to extract. You can download it manually at https://github.com/gorcon/rcon-cli/releases/latest\nEnsure the executable is in a folder named rcon in the same directory as bot.py")
-        exit()
 
   backup_dir = Path(config['palworld']['backup_path'])
   if not backup_dir.is_dir() and not backup_dir.exists():
@@ -225,4 +234,4 @@ if __name__ == "__main__":
   password = config["palworld"]["password"]
   rcon_command = [config["palworld"]["rcon_path"], "-a", f"{hostname}", "-p", f"{password}"]
 
-  bot.run(config['discord']['token'])
+  bot.run(config['discord']['token']) 
