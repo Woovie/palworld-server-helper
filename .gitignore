@@ -2,6 +2,7 @@ allowlist.json
 cache.json
 config.ini
 .python-version
+rcon/
 
 # Other thing I'm working on, not relevant to this bot, ignore this
 server-config.ini
