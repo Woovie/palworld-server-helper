@@ -1,5 +1,11 @@
 # Palworld Discord Bot
 
+## Features
+
+
+- Custom allowlist solution using rcon to read the player list and compare Steam IDs to the allowed list.
+- Execute some RCON commands from Discord.
+
 ## Expectations
 
 You have some Python experience, Linux experience, and Discord bot experience. I simply do not have the time to help everyone, I'm sorry.
@@ -14,12 +20,12 @@ You have some Python experience, Linux experience, and Discord bot experience. I
 Once running, the default command prefix is ! and the following commands exist:
 
 - players
-- kick
-- ban
-- allow
-- disallow
+- kick (Needs Discord kick privileges)
+- ban (Needs Discord ban privileges)
+- allow (Needs Discord kick privileges)
+- disallow (Needs Discord kick privileges)
 - allowlist
-- shutdown
+- shutdown (Needs Discord ban privileges)
 - save
 
 Each should be relatively straighforward.
