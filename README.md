@@ -66,4 +66,4 @@ These are specific to the announcements of "<SteamID> kicked, not on the allowli
 
 ## I still need help
 
-Join here and I might be able to help more should time allow: https://discord.gg/ccyGETpetwf
+Join here and I might be able to help more should time allow: https://discord.gg/ccyGETpetw
