@@ -5,18 +5,13 @@ import configparser
 import re
 import aiohttp
 import json
+import requests
+from pathlib import Path
+import datetime
 
 cache = {}
 allowlist = []
-
-with open("cache.json", "r") as raw_read:
-  cache = json.load(raw_read)
-
-with open("allowlist.json", "r") as raw_read:
-  allowlist = json.load(raw_read)
-
 config = configparser.ConfigParser()
-config.read("config.ini")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -24,11 +19,11 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 hostname = f"{config["palworld"]["hostname"]}:{config["palworld"]["port"]}"
 password = config["palworld"]["password"]
-rcon_command = ["/usr/local/bin/rcon", "-a", f"{hostname}", "-p", f"{password}"]
+rcon_command = [config["palworld"]["rcon_path"], "-a", f"{hostname}", "-p", f"{password}"]
 
 @bot.event
 async def on_ready():
-    print(f"We have logged in as {bot.user}")
+    print(f"We have logged in to Discord as {bot.user}")
     player_scanner.start()
 
 @tasks.loop(seconds=10)
@@ -37,6 +32,18 @@ async def player_scanner():
     await kick_unwanted(matches)
     player_count = len(matches)
     await bot.change_presence(activity=discord.Game(name=f"{player_count}/32 players"))
+
+# TODO WIP add backup functionality
+# @tasks.loop(minutes=5)
+# async def backup_saves():
+#   await perform_rcon_command("Save")
+#   # Zip the save folder into a file with a date and time stamp in the name
+#   zip_folder_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+#   backup_path = f"{config['palworld']['backup_path']}/{zip_folder_name}.zip"
+#   print(backup_path)
+#   subprocess.run(["zip", "-r", backup_path, config["palworld"]["save_path"]])
+#   # The path of the folder is config["palworld"]["save_path"]
+
 
 async def get_players():
   result = await perform_rcon_command("ShowPlayers")
@@ -48,11 +55,18 @@ async def kick_unwanted(matches):
   for match in matches:
     if not str(match[2]) in allowlist:
       await perform_rcon_command(f"KickPlayer {match[2]}")
-      guild = bot.get_guild(105420838487990272)
-      channel = guild.get_channel(1019639566765936650)
-      thread = channel.get_thread(1197370734096429116)
-      await thread.send(f"\n{match[0]} {match[2]} kicked, not on the whitelist")
+      await send_discord_message(f"\n{match[0]} {match[2]} kicked, not on the allowlist")
 
+async def send_discord_message(message):
+  guild = bot.get_guild(int(config['discord']['guild']))
+  channel = guild.get_channel(int(config['discord']['channel']))
+  announce_to = channel
+
+  if config['discord']['thread']:
+    thread = channel.get_thread(int(config['discord']['thread']))
+    announce_to = thread
+  
+  await announce_to.send(message)
 
 def cache_write():
   with open("cache.json", "w") as raw_write:
@@ -77,8 +91,11 @@ async def perform_rcon_command(command):
 @bot.hybrid_command(name="players", description="Show current players")
 async def show_players(context: commands.Context):
   matches = await get_players()
-  longest_name = max(len(match[0]) for match in matches)
+  if len(matches) == 0:
+    await context.send("No players online")
+    return
 
+  longest_name = max(len(match[0]) for match in matches)
   players = [f"Steam ID          {'Ingame Name'.ljust(longest_name)} Steam Username", ""]
   for match in matches:
     formatted_name = match[0].ljust(longest_name)
@@ -124,7 +141,7 @@ async def disallow_player(context: commands.Context, steamid: str):
     else:
       await context.send(f"{steamid} not in allowlist")
 
-@bot.hybrid_command(name="allowlist", description="Show allowlist")
+@bot.hybrid_command(name="allowlist", description="Show allowed players")
 async def show_allowlist(context: commands.Context):
   steamids = []
   for allowed in allowlist:
@@ -134,4 +151,74 @@ async def show_allowlist(context: commands.Context):
       steamids.append(f"{allowed} Unknown User")
   await context.send(f"```c\n{'\n'.join(steamids)}```")
 
-bot.run(config['discord']['token'])
+@bot.hybrid_command(name="shutdown", description="Shutdown the server")
+async def shutdown_server(context: commands.Context, seconds: str, *, reason: str):
+  if context.channel.permissions_for(context.author).ban_members:
+    # await send_discord_message(f"Shutdown seconds: {seconds} reason: {reason}")
+    result = await perform_rcon_command(f"Shutdown {seconds} {reason}")
+    await context.send(f"```c\n{result}```")
+
+# TODO Presently broken, awaiting Palworld devs
+# @bot.hybrid_command(name="broadcast", description="Send a server announcement")
+# async def broadcast_message(context: commands.Context, *, message: str):
+#   if context.channel.permissions_for(context.author).kick_members:
+#     # await send_discord_message(f"Broadcast {message}")
+#     result = await perform_rcon_command(f"Broadcast {message}")
+#     await context.send(f"```c\n{result}```")
+
+@bot.hybrid_command(name="save", description="Save the server")
+async def save(context: commands.Context):
+    # await send_discord_message(f"Broadcast {message}")
+    result = await perform_rcon_command(f"Save")
+    await context.send(f"```c\n{result}```")
+
+if __name__ == "__main__":
+  if not Path('config.ini').is_file():
+    print("config.ini not found, please copy config.example.ini to config.ini and fill in the values.")
+    exit()
+
+  config.read("config.ini")
+
+  if not Path('rcon').is_dir():
+    print("rcon folder not found, downloading gorcon/rcon-cli from GitHub. Assuming Win64.")
+    github_api_results = requests.get("https://api.github.com/repos/gorcon/rcon-cli/releases/latest")
+    github_api_json = github_api_results.json()
+    github_api_assets = github_api_json["assets"]
+    for asset in github_api_assets:
+      if asset["name"].endswith("win64.zip"):
+        rcon_download_url = asset["browser_download_url"]
+        rcon_download = requests.get(rcon_download_url)
+        with open(asset["name"], "wb") as rcon_file:
+          rcon_file.write(rcon_download.content)
+        unzip_result = subprocess.run(["unzip", "-j", asset["name"], "-d", "rcon"])
+        if unzip_result.returncode == 0:
+          print("rcon-cli downloaded and extracted successfully.")
+          subprocess.run(["rm", asset["name"]])
+          break
+        print("rcon-cli downloaded but failed to extract. You can download it manually at https://github.com/gorcon/rcon-cli/releases/latest\nEnsure the executable is in a folder named rcon in the same directory as bot.py")
+        exit()
+
+  backup_dir = Path(config['palworld']['backup_path'])
+  if not backup_dir.is_dir() and not backup_dir.exists():
+    backup_dir.mkdir()
+  elif not backup_dir.is_dir():
+    print("backup_path is not a directory, please check the path in config.ini")
+    exit()
+
+  if not Path('cache.json').is_file():
+    print("cache.json not found, creating empty cache.")
+    with open("cache.json", "w") as raw_write:
+      json.dump({}, raw_write)
+
+  with open("cache.json", "r") as raw_read:
+    cache = json.load(raw_read)
+
+  if not Path('allowlist.json').is_file():
+    print("allowlist.json not found, creating empty allowlist.")
+    with open("allowlist.json", "w") as raw_write:
+      json.dump([], raw_write)
+
+  with open("allowlist.json", "r") as raw_read:
+    allowlist = json.load(raw_read)
+
+  bot.run(config['discord']['token'])
