@@ -167,13 +167,11 @@ async def shutdown_server(context: commands.Context, seconds: str, *, reason: st
     result = await perform_rcon_command(f"Shutdown {seconds} {reason}")
     await context.send(discord_codeblock_formatter(result))
 
-# TODO Presently broken, awaiting Palworld devs
-# @bot.hybrid_command(name="broadcast", description="Send a server announcement")
-# async def broadcast_message(context: commands.Context, *, message: str):
-#   if context.channel.permissions_for(context.author).kick_members:
-#     # await send_discord_message(f"Broadcast {message}")
-#     result = await perform_rcon_command(f"Broadcast {message}")
-#     await context.send(f"```c\n{result}```")
+@bot.hybrid_command(name="broadcast", description="Send a server announcement")
+async def broadcast_message(context: commands.Context, *, message: str):
+  if context.channel.permissions_for(context.author).kick_members:
+    result = await perform_rcon_command(f"Broadcast {message}")
+    await context.send(discord_codeblock_formatter(result))
 
 @bot.hybrid_command(name="save", description="Save the server")
 async def save(context: commands.Context):
