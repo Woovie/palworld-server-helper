@@ -22,6 +22,11 @@ Install [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cp
 - Copy config.example.ini to config.ini and edit as needed
 - Install dependencies from requirements.txt using `pip install -r requirements.txt`
 - Run with `python bot.py`
+- Enable RCON and set an administrator password in your Palworld dedicated server's configuration located at `Pal\Saved\Config\WindowsServer\PalWorldSettings.ini`
+
+A default configuration is provided in the root directory of your Palworld install as `DefaultPalWorldSettings.ini`
+
+### Usage
 
 Once running, the default command prefix is ! and the following commands exist:
 
