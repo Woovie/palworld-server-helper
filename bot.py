@@ -15,6 +15,7 @@ import shutil
 cache = {}
 allowlist = []
 config = configparser.ConfigParser()
+settings = {}
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -55,10 +56,11 @@ async def get_players():
   return matches
 
 async def kick_unwanted(matches):
-  for match in matches:
-    if not str(match[2]) in allowlist:
-      await perform_rcon_command(f"KickPlayer {match[2]}")
-      await send_discord_message(f"\n{match[0]} {match[2]} kicked, not on the allowlist")
+  if settings["toggles"]["allowlist"]:
+    for match in matches:
+      if not str(match[2]) in allowlist:
+        await perform_rcon_command(f"KickPlayer {match[2]}")
+        await send_discord_message(f"\n{match[0]} {match[2]} kicked, not on the allowlist")
 
 async def send_discord_message(message):
   guild = bot.get_guild(int(config['discord']['guild']))
@@ -179,6 +181,17 @@ async def save(context: commands.Context):
     result = await perform_rcon_command(f"Save")
     await context.send(discord_codeblock_formatter(result))
 
+@bot.hybrid_command(name="toggle", description="Toggle a setting")
+async def toggle_setting(context: commands.Context, setting: str):
+  if context.channel.permissions_for(context.author).kick_members:
+    if setting in settings["toggles"]:
+      settings["toggles"][setting] = not settings["toggles"][setting]
+      with open("settings.json", "w") as raw_write:
+        json.dump(settings, raw_write)
+      await context.send(f"{setting} toggled to {settings['toggles'][setting]}")
+    else:
+      await context.send(f"{setting} not found, valid settings are: {', '.join(settings['toggles'].keys())}")
+
 if __name__ == "__main__":
   if not Path('config.ini').is_file():
     print("config.ini not found, please copy config.example.ini to config.ini and fill in the values.")
@@ -233,6 +246,16 @@ if __name__ == "__main__":
 
   with open("allowlist.json", "r") as raw_read:
     allowlist = json.load(raw_read)
+  
+  default_settings = {"toggles": {"allowlist": True}}
+
+  if not Path('settings.json').is_file():
+    print("settings.json not found, creating empty settings.")
+    with open("settings.json", "w") as raw_write:
+      json.dump(default_settings, raw_write)
+
+  with open("settings.json", "r") as raw_read:
+    settings = json.load(raw_read)
 
   hostname = f"{config['palworld']['hostname']}:{config['palworld']['port']}"
   password = config["palworld"]["password"]
