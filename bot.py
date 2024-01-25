@@ -91,6 +91,10 @@ async def perform_rcon_command(command):
   output = process.stdout.read()
   return output.decode("utf-8")
 
+def discord_codeblock_formatter(message):
+  codeblock_format = "c\n"
+  return f"```{codeblock_format}{message}```"
+
 @bot.hybrid_command(name="players", description="Show current players")
 async def show_players(context: commands.Context):
   matches = await get_players()
@@ -108,19 +112,21 @@ async def show_players(context: commands.Context):
       cache[match[2]] = steam_payload
       cache_write()
     players.append(f"{match[2]} {formatted_name} {cache[match[2]]['steamID']}")
-  await context.send(f"```c\n{'\n'.join(players)}```")
+
+  # playerlist = '\n'.join(players)
+  await context.send(discord_codeblock_formatter('\n'.join(players)))
 
 @bot.hybrid_command(name="kick", description="Kick a player")
 async def kick_player(context: commands.Context, steamid: str):
   if context.channel.permissions_for(context.author).kick_members:
     result = perform_rcon_command(f"KickPlayer {steamid}")
-    await context.send(f"```c\n{result}```")
+    await context.send(discord_codeblock_formatter(result))
 
 @bot.hybrid_command(name="ban", description="Ban a player")
 async def ban_player(context: commands.Context, steamid: str):
   if context.channel.permissions_for(context.author).ban_members:
     result = perform_rcon_command(f"BanPlayer {steamid}")
-    await context.send(f"```c\n{result}```")
+    await context.send(discord_codeblock_formatter(result))
 
 @bot.hybrid_command(name="allow", description="Allow a player to join")
 async def allow_player(context: commands.Context, steamid: str):
@@ -149,17 +155,17 @@ async def show_allowlist(context: commands.Context):
   steamids = []
   for allowed in allowlist:
     if str(allowed) in cache:
-      steamids.append(f"{allowed} {cache[str(allowed)]["steamID"]}")
+      steamids.append(f"{allowed} {cache[str(allowed)]['steamID']}")
     else:
       steamids.append(f"{allowed} Unknown User")
-  await context.send(f"```c\n{'\n'.join(steamids)}```")
+  await context.send(discord_codeblock_formatter('\n'.join(steamids)))
 
 @bot.hybrid_command(name="shutdown", description="Shutdown the server")
 async def shutdown_server(context: commands.Context, seconds: str, *, reason: str):
   if context.channel.permissions_for(context.author).ban_members:
     # await send_discord_message(f"Shutdown seconds: {seconds} reason: {reason}")
     result = await perform_rcon_command(f"Shutdown {seconds} {reason}")
-    await context.send(f"```c\n{result}```")
+    await context.send(discord_codeblock_formatter(result))
 
 # TODO Presently broken, awaiting Palworld devs
 # @bot.hybrid_command(name="broadcast", description="Send a server announcement")
@@ -173,7 +179,7 @@ async def shutdown_server(context: commands.Context, seconds: str, *, reason: st
 async def save(context: commands.Context):
     # await send_discord_message(f"Broadcast {message}")
     result = await perform_rcon_command(f"Save")
-    await context.send(f"```c\n{result}```")
+    await context.send(discord_codeblock_formatter(result))
 
 if __name__ == "__main__":
   if not Path('config.ini').is_file():
@@ -230,7 +236,7 @@ if __name__ == "__main__":
   with open("allowlist.json", "r") as raw_read:
     allowlist = json.load(raw_read)
 
-  hostname = f"{config["palworld"]["hostname"]}:{config["palworld"]["port"]}"
+  hostname = f"{config['palworld']['hostname']}:{config['palworld']['port']}"
   password = config["palworld"]["password"]
   rcon_command = [config["palworld"]["rcon_path"], "-a", f"{hostname}", "-p", f"{password}"]
 
