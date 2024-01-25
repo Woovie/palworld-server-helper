@@ -33,6 +33,7 @@ Once running, the default command prefix is ! and the following commands exist:
 - allowlist
 - shutdown (Needs Discord ban privileges)
 - save
+- broadcast (You **MUST** use underscores instead of spaces due to a known bug in the Palworld dedicated server)
 
 Each should be relatively straighforward.
 
