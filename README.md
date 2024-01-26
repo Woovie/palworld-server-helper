@@ -18,7 +18,7 @@ Install [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cp
 
 ![image](https://github.com/Woovie/palworld-server-helper/assets/7304619/5da3a18b-7080-4892-97f9-19eeeb183886)
 
-- Have some form of Python 3.10+ installed (Maybe even 3.12? Not sure how backward compatible my code is honestly, but I used 3.12)
+- Have some form of Python 3.10+ installed
 - Copy config.example.ini to config.ini and edit as needed
 - Install dependencies from requirements.txt using `pip install -r requirements.txt`
 - Run with `python bot.py`
