@@ -84,6 +84,8 @@ async def fetch_steam_username(steam_id):
       if response.status == 200:
         data = await response.text()
         return json.loads(data)
+      else:
+        return None
 
 async def perform_rcon_command(command):
   process = subprocess.Popen(rcon_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -107,27 +109,32 @@ async def show_players(context: commands.Context):
   longest_name = max(len(match[0]) for match in matches)
   players = [f"Steam ID          {'Ingame Name'.ljust(longest_name)} Steam Username", ""]
   for match in matches:
+    if not len(match) == 3:
+      print(f"Error, report this issue and include this data: {json.dumps(matches)}")
+      continue
     formatted_name = match[0].ljust(longest_name)
     if not str(match[2]) in cache:
       steam_payload = await fetch_steam_username(match[2])
+      if steam_payload is None:
+        steam_payload = {"steamID": "Unknown User"}
+        print(f"Error fetching steam username for {match[2]}")
       print(f'added cache for {match[2]}')
       cache[match[2]] = steam_payload
       cache_write()
     players.append(f"{match[2]} {formatted_name} {cache[match[2]]['steamID']}")
 
-  # playerlist = '\n'.join(players)
   await context.send(discord_codeblock_formatter('\n'.join(players)))
 
 @bot.hybrid_command(name="kick", description="Kick a player")
 async def kick_player(context: commands.Context, steamid: str):
   if context.channel.permissions_for(context.author).kick_members:
-    result = perform_rcon_command(f"KickPlayer {steamid}")
+    result = await perform_rcon_command(f"KickPlayer {steamid}")
     await context.send(discord_codeblock_formatter(result))
 
 @bot.hybrid_command(name="ban", description="Ban a player")
 async def ban_player(context: commands.Context, steamid: str):
   if context.channel.permissions_for(context.author).ban_members:
-    result = perform_rcon_command(f"BanPlayer {steamid}")
+    result = await perform_rcon_command(f"BanPlayer {steamid}")
     await context.send(discord_codeblock_formatter(result))
 
 @bot.hybrid_command(name="allow", description="Allow a player to join")
