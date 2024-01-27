@@ -85,6 +85,7 @@ async def fetch_steam_username(steam_id):
         data = await response.text()
         return json.loads(data)
       else:
+        print(f"{response.status} error fetching steam username for {steam_id}, response: {response}")
         return None
 
 async def perform_rcon_command(command):
