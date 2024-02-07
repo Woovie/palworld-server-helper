@@ -1,5 +1,8 @@
 # Palworld Discord Bot
 
+> [!CAUTION]
+> This project is no longer maintained. I sadly lack the time to work on it, but also have lost interest, and there's many tools that can do this and more, please check out other solutions here on GitHub as I do not intend to continue this. Thanks to everyone for the support!
+
 ## Features
 
 
